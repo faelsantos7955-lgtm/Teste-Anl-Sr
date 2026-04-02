@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Painel do Recrutador | Imile Delivery</title>
+<style>
+  :root{--purple:#534AB7;--purple-light:#EEEDFE;--teal:#1D9E75;--bg:#f6f6f8;--card:#fff;--text:#1f2330;--muted:#677084;--border:#dfe3eb;--danger:#c0392b;--amber:#b9770e}
+  *{box-sizing:border-box} body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  .wrap{max-width:1400px;margin:0 auto;padding:24px}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .title{font-size:28px;font-weight:800}.subtitle{color:var(--muted);margin-top:4px}
+  .grid{display:grid;grid-template-columns:360px 1fr;gap:18px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,.04)}
+  .side{padding:18px}.main{padding:18px}
+  input,select,textarea,button{font:inherit}
+  .search{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;margin-bottom:12px}
+  .list{max-height:75vh;overflow:auto;display:flex;flex-direction:column;gap:10px}
+  .candidate{padding:14px;border:1px solid var(--border);border-radius:14px;cursor:pointer;background:#fff}
+  .candidate.active{border-color:var(--purple);background:var(--purple-light)}
+  .row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .name{font-weight:700}.meta{font-size:12px;color:var(--muted);margin-top:5px}
+  .pill{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;background:#eef2ff;color:var(--purple)}
+  .pill.ok{background:#e8f8f1;color:#0f6e56}.pill.warn{background:#fff4df;color:#946200}.pill.bad{background:#fdecea;color:#a93226}
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+  .kpi{padding:14px;border:1px solid var(--border);border-radius:14px;background:#fff}.kpi .v{font-size:24px;font-weight:800}.kpi .l{font-size:12px;color:var(--muted);margin-top:4px}
+  .empty{padding:50px 20px;text-align:center;color:var(--muted)}
+  .question{border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;background:#fff}
+  .question h3{margin:0 0 8px;font-size:16px}.muted{color:var(--muted)}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+  .box{border:1px solid var(--border);border-radius:12px;padding:12px;background:#fbfcff}
+  .box pre{white-space:pre-wrap;word-wrap:break-word;margin:0;font-family:Consolas,monospace;font-size:12px;line-height:1.6}
+  .review{display:grid;grid-template-columns:200px 140px 1fr auto;gap:10px;align-items:start;margin-top:12px}
+  .review select,.review input,.review textarea{padding:10px 12px;border:1px solid var(--border);border-radius:10px;width:100%}
+  .review textarea{min-height:70px;resize:vertical}
+  .btn{background:var(--purple);color:#fff;border:none;border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer}
+  .btn.secondary{background:#fff;color:var(--purple);border:1px solid var(--border)}
+  .statusline{margin:8px 0 16px;color:var(--muted);font-size:13px}
+  @media(max-width:1100px){.grid{grid-template-columns:1fr}.summary{grid-template-columns:repeat(2,1fr)}.cols{grid-template-columns:1fr}.review{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="title">Painel do recrutador</div>
+      <div class="subtitle">Veja respostas, compare com o gabarito e ajuste a correção manualmente. Dados da Imile Delivery carregados do Google Sheets via Apps Script.</div>
+    </div>
+    <button class="btn secondary" onclick="loadCandidates()">Atualizar</button>
+  </div>
+
+  <div class="grid">
+    <div class="card side">
+      <input id="search" class="search" placeholder="Buscar por nome ou e-mail" oninput="renderCandidateList()" />
+      <div id="candidateList" class="list"></div>
+    </div>
+
+    <div class="card main">
+      <div id="mainContent" class="empty">Selecione um candidato para ver o detalhe das respostas.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxphXH_cL_bun1dykoKnE7QgFM84zWnm1PCb0SbofTLFwWWRx5UkTWa8V6pHL-6keki/exec';
+let candidates = [];
+let currentAttempt = null;
+let currentDetail = null;
+
+function scoreClass(v){ if(v>=85) return 'ok'; if(v>=70) return 'warn'; return 'bad'; }
+function safe(v){ return (v ?? '').toString(); }
+async function api(params, method='GET'){
+  if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes('COLE_AQUI')) throw new Error('Configure a URL do Apps Script.');
+  let url = GOOGLE_SCRIPT_URL;
+  const opt={method};
+  if(method==='GET') url += (url.includes('?')?'&':'?') + new URLSearchParams(params).toString();
+  else { opt.headers={'Content-Type':'text/plain;charset=utf-8'}; opt.body=JSON.stringify(params); }
+  const res = await fetch(url,opt); const data = await res.json().catch(()=>({}));
+  if(!res.ok || data.ok===false) throw new Error(data.error || 'Falha na API');
+  return data;
+}
+
+async function loadCandidates(){
+  const list = document.getElementById('candidateList');
+  list.innerHTML = '<div class="muted">Carregando...</div>';
+  try{
+    const data = await api({action:'listCandidates'});
+    candidates = data.candidates || [];
+    renderCandidateList();
+    if (currentAttempt) {
+      const found = candidates.find(c => c.attempt_id === currentAttempt);
+      if (found) loadCandidate(found.attempt_id);
+    }
+  }catch(e){
+    list.innerHTML = `<div class="muted">${e.message}</div>`;
+  }
+}
+
+function renderCandidateList(){
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  const list = document.getElementById('candidateList');
+  const filtered = candidates.filter(c => `${safe(c.nome)} ${safe(c.email)}`.toLowerCase().includes(q));
+  if(!filtered.length){ list.innerHTML = '<div class="muted">Nenhum candidato encontrado.</div>'; return; }
+  list.innerHTML = filtered.map(c => `
+    <div class="candidate ${c.attempt_id===currentAttempt?'active':''}" onclick="loadCandidate('${c.attempt_id}')">
+      <div class="row"><div class="name">${safe(c.nome) || 'Sem nome'}</div><div class="pill ${scoreClass(Number(c.final_score||0))}">${safe(c.final_score)}/100</div></div>
+      <div class="meta">${safe(c.email)}<br>Auto: ${safe(c.auto_score)}/100 • Revisado: ${safe(c.reviewed_count)}/${safe(c.questions_count)} questões</div>
+    </div>`).join('');
+}
+
+function reviewSelect(status){
+  return `<select data-field="status"><option value="">Sem revisão</option><option value="Correta" ${status==='Correta'?'selected':''}>Correta</option><option value="Parcial" ${status==='Parcial'?'selected':''}>Parcial</option><option value="Incorreta" ${status==='Incorreta'?'selected':''}>Incorreta</option></select>`;
+}
+
+function renderDetail(data){
+  currentDetail = data;
+  const c = data.candidate;
+  const questions = data.questions || [];
+  const html = `
+    <div class="summary">
+      <div class="kpi"><div class="v">${safe(c.final_score)}/100</div><div class="l">Nota final</div></div>
+      <div class="kpi"><div class="v">${safe(c.auto_score)}/100</div><div class="l">Nota automática</div></div>
+      <div class="kpi"><div class="v">${safe(c.reviewed_count)}/${safe(c.questions_count)}</div><div class="l">Questões revisadas</div></div>
+      <div class="kpi"><div class="v">${safe(c.faixa_final || c.faixa_auto || '-')}</div><div class="l">Classificação</div></div>
+    </div>
+    <div class="statusline"><strong>${safe(c.nome)}</strong> • ${safe(c.email)} ${c.linkedin ? '• ' + safe(c.linkedin) : ''}</div>
+    ${questions.map((q, idx)=>`
+      <div class="question" data-qid="${q.question_id}">
+        <div class="row"><h3>${idx+1}. ${safe(q.pergunta)}</h3><div class="pill">${safe(q.review_score ?? q.auto_score)}/${safe(q.max_pontos)}</div></div>
+        <div class="muted">Status revisão: <strong>${safe(q.review_status || 'Sem revisão')}</strong></div>
+        <div class="cols">
+          <div class="box"><strong>Resposta do candidato</strong><pre>${escapeHtml(safe(q.resposta) || '—')}</pre></div>
+          <div class="box"><strong>Gabarito / resposta esperada</strong><pre>${escapeHtml(safe(q.gabarito) || '—')}</pre></div>
+        </div>
+        <div class="review">
+          ${reviewSelect(q.review_status)}
+          <input type="number" data-field="score" min="0" max="${q.max_pontos}" step="0.5" value="${safe(q.review_score ?? q.auto_score)}" />
+          <textarea data-field="note" placeholder="Observação do recrutador...">${safe(q.review_note)}</textarea>
+          <button class="btn" onclick="saveQuestionReview('${q.question_id}', ${q.max_pontos}, this)">Salvar</button>
+        </div>
+      </div>`).join('')}
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function escapeHtml(str){
+  return str.replace(/[&<>"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]));
+}
+
+async function loadCandidate(attemptId){
+  currentAttempt = attemptId;
+  renderCandidateList();
+  document.getElementById('mainContent').innerHTML = '<div class="empty">Carregando respostas...</div>';
+  try{
+    const data = await api({action:'getCandidate', attempt_id:attemptId});
+    renderDetail(data);
+  }catch(e){
+    document.getElementById('mainContent').innerHTML = `<div class="empty">${e.message}</div>`;
+  }
+}
+
+async function saveQuestionReview(questionId, maxPontos, btn){
+  const card = btn.closest('.question');
+  const status = card.querySelector('[data-field="status"]').value;
+  const score = Number(card.querySelector('[data-field="score"]').value || 0);
+  const note = card.querySelector('[data-field="note"]').value;
+  if(score < 0 || score > maxPontos){ alert(`A nota deve ficar entre 0 e ${maxPontos}.`); return; }
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try{
+    await api({ action:'saveReview', attempt_id: currentAttempt, reviews:[{ question_id: questionId, review_status: status, review_score: score, review_note: note }] }, 'POST');
+    await loadCandidates();
+    await loadCandidate(currentAttempt);
+  }catch(e){
+    alert(e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = 'Salvar';
+  }
+}
+
+loadCandidates();
+</script>
+</body>
+</html>

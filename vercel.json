@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/candidato", "destination": "/candidato.html" },
+    { "source": "/recrutador", "destination": "/recrutador.html" }
+  ]
+}

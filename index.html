@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teste Prático | Imile Delivery</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:24px}
+    .card{max-width:760px;width:100%;background:#111827;border:1px solid #334155;border-radius:18px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    h1{margin:0 0 12px;font-size:28px}
+    p{color:#cbd5e1;line-height:1.6}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+    a{display:inline-block;padding:12px 16px;border-radius:12px;text-decoration:none;font-weight:700}
+    .primary{background:#14b8a6;color:#042f2e}
+    .secondary{background:#1f2937;color:#f8fafc;border:1px solid #334155}
+    .muted{font-size:14px;color:#94a3b8;margin-top:12px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Teste Prático — Imile Delivery</h1>
+    <p>Escolha a página que deseja abrir. O candidato faz o teste e baixa o Excel. O recrutador acessa as respostas, compara com o gabarito e ajusta a nota manualmente.</p>
+    <div class="actions">
+      <a class="primary" href="/candidato">Abrir área do candidato</a>
+      <a class="secondary" href="/recrutador">Abrir painel do recrutador</a>
+      <a class="secondary" href="/Imile%20Delivery_Operacoes.xlsx" download>Baixar Excel</a>
+    </div>
+    <div class="muted">Publicado no Netlify com integração ao Google Sheets via Apps Script.</div>
+  </div>
+</body>
+</html>
