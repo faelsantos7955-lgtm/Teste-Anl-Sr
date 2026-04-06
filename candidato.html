@@ -127,6 +127,14 @@
   .btn-submit:active { transform: scale(.98); }
   .btn-submit:disabled { background: var(--gray); cursor: not-allowed; transform: none; }
 
+  /* Timer */
+  .timer { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--text); padding: 8px 14px; border-radius: 8px; background: var(--bg2); border: 1px solid var(--border); transition: background .3s, color .3s; }
+  .timer .timer-icon { font-size: 16px; }
+  .timer.warn { background: var(--amber-light); border-color: #e8c88a; color: var(--amber-dark); }
+  .timer.danger { background: var(--red-light); border-color: #f5b7b7; color: var(--red); animation: pulse .8s infinite; }
+  .timer.expired { background: var(--red-light); border-color: var(--red); color: var(--red); }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.6; } }
+
   /* Toast */
   .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1e1e2e; color: #cdd6f4; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; opacity: 0; transition: opacity .3s, transform .3s; z-index: 9999; pointer-events: none; white-space: nowrap; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -656,8 +664,14 @@ CALCULATE(
 
 <!-- Submit bar -->
 <div class="submit-bar">
-  <div class="progress">
-    Preenchido: <strong id="filled-count">0</strong> / 9 campos
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <div class="progress">
+      Preenchido: <strong id="filled-count">0</strong> / 9 campos
+    </div>
+    <div class="timer" id="timer">
+      <span class="timer-icon">⏱</span>
+      <span id="timer-display">3:00:00</span>
+    </div>
   </div>
   <div class="submit-actions">
     <button class="btn-secondary" id="btn-preview" onclick="previewResult()" style="display:none">👁 Ver Resultado</button>
@@ -894,6 +908,115 @@ function previewResult() {
 }
 
 document.getElementById('cand-inicio').value = new Date().toISOString().slice(0,16);
+
+// ── Timer 3h ─────────────────────────────────────────────────
+const TIMER_KEY = 'teste_imile_timer_end';
+const TOTAL_SECONDS = 3 * 60 * 60; // 3h
+
+function initTimer() {
+  // Se já havia uma sessão em andamento, retoma o tempo restante
+  let endTs = Number(localStorage.getItem(TIMER_KEY) || 0);
+  if (!endTs || endTs < Date.now()) {
+    endTs = Date.now() + TOTAL_SECONDS * 1000;
+    localStorage.setItem(TIMER_KEY, endTs);
+  }
+
+  const display  = document.getElementById('timer-display');
+  const timerEl  = document.getElementById('timer');
+
+  const interval = setInterval(() => {
+    const remaining = Math.max(0, Math.round((endTs - Date.now()) / 1000));
+    const h = Math.floor(remaining / 3600);
+    const m = Math.floor((remaining % 3600) / 60);
+    const s = remaining % 60;
+    display.textContent = `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+    // Cores de alerta
+    timerEl.className = 'timer';
+    if (remaining <= 300)       timerEl.classList.add('danger'); // ≤ 5 min
+    else if (remaining <= 1800) timerEl.classList.add('warn');   // ≤ 30 min
+
+    if (remaining === 0) {
+      clearInterval(interval);
+      localStorage.removeItem(TIMER_KEY);
+      timerEl.classList.add('expired');
+      display.textContent = '0:00:00';
+      onTimerExpired();
+    }
+  }, 1000);
+}
+
+async function onTimerExpired() {
+  // Bloqueia interação
+  document.querySelectorAll('textarea.answer-input, input').forEach(el => el.disabled = true);
+  document.getElementById('btn-submit').disabled = true;
+  document.getElementById('btn-preview').style.display = 'none';
+
+  // Exibe aviso
+  showToast('⏰ Tempo esgotado! Enviando respostas automaticamente…', 'error');
+
+  // Aguarda 2s para o candidato ver o aviso e envia
+  await new Promise(r => setTimeout(r, 2000));
+
+  // Usa o mesmo fluxo do botão, mas sem exigir nome/email obrigatórios
+  const nome     = document.getElementById('cand-nome').value.trim()  || 'Não informado';
+  const email    = document.getElementById('cand-email').value.trim() || 'sem-email@timeout.local';
+  const linkedin = document.getElementById('cand-linkedin').value.trim();
+  const inicio   = document.getElementById('cand-inicio').value || '';
+
+  const result    = evaluateAnswers();
+  renderCandidateResult(result);
+
+  const attemptId     = uid();
+  const questionMeta  = buildQuestionMeta();
+  const answers = allFields.map(id => ({
+    id,
+    pergunta:            questionMeta[id].label,
+    max_pontos:          questionMeta[id].pts,
+    pontuacao_estimada:  Number(result.details.find(d => d.id === id)?.score || 0),
+    resposta:            (document.getElementById(id)?.value || '').trim(),
+    gabarito:            GABARITO[id] || '',
+  }));
+
+  const payload = {
+    action:               'submitTest',
+    arquivo_excel_base64: selectedFileBase64 || null,
+    submitted_at_iso:     new Date().toISOString(),
+    attempt_id:           attemptId,
+    timeout:              true,
+    candidato:            { nome, email, linkedin, inicio },
+    resultado: {
+      pontuacao_total: result.total,
+      faixa:           result.band,
+      mensagem:        result.message,
+    },
+    respostas: answers,
+  };
+
+  // Salva no localStorage
+  try {
+    localStorage.setItem(`teste_imile_${payload.attempt_id}`, JSON.stringify(payload));
+    const all = JSON.parse(localStorage.getItem('teste_imile_attempts') || '[]');
+    if (!all.includes(payload.attempt_id)) { all.push(payload.attempt_id); localStorage.setItem('teste_imile_attempts', JSON.stringify(all)); }
+  } catch(_) {}
+
+  // Tenta enviar para Apps Script
+  try {
+    await callAppsScript(payload);
+    showToast('✅ Respostas enviadas automaticamente.', 'success');
+  } catch(_) {
+    showToast('⚠️ Salvo localmente. Baixe o arquivo de backup.', 'error');
+    const dl = document.createElement('a');
+    dl.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(payload, null, 2));
+    dl.download = `respostas_timeout_${nome.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.json`;
+    dl.className = 'btn-secondary';
+    dl.style.cssText = 'display:inline-flex;align-items:center;gap:6px;text-decoration:none;margin-top:8px;';
+    dl.innerHTML = '⬇️ Baixar respostas (JSON)';
+    document.querySelector('.submit-actions').appendChild(dl);
+  }
+}
+
+initTimer();
 allFields.forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('blur', () => {
