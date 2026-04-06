@@ -214,12 +214,12 @@
     <p class="subtitle">Avaliação técnica focada em planilhamento avançado e análise de dados com Power BI. Os dois módulos utilizam o mesmo conjunto de dados fictícios da Imile Delivery.</p>
     <div class="cover-meta">
       <span class="badge badge-amber">● Excel Avançado</span>
-      <span class="badge badge-teal">● Power BI Avançado</span>
-      <span class="badge badge-gray">⏱ 2h30min no total</span>
+      <span class="badge badge-gray">⏱ 3h no total</span>
       <span class="badge badge-gray">100 pontos</span>
+      <span class="badge badge-gray">7 questões</span>
     </div>
     <div class="cover-info">
-      <strong>Instruções gerais:</strong> Baixe o arquivo Excel antes de começar. Leia o contexto de cada módulo antes de responder. Documente suas premissas quando necessário. A organização e clareza das respostas fazem parte da avaliação. Clique em <strong>Enviar Respostas</strong> ao finalizar os dois módulos.
+      <strong>Instruções gerais:</strong> Baixe o arquivo Excel antes de começar. Leia o contexto de cada questão antes de responder. Documente suas premissas quando necessário. A organização e clareza das respostas fazem parte da avaliação. Clique em <strong>Enviar Respostas</strong> ao finalizar.
     </div>
   </div>
 
@@ -295,13 +295,8 @@
   </div>
 
   <!-- Tabs -->
-  <div class="tabs-wrap">
-    <button class="tab-btn active" onclick="show('excel',this)">Módulo 1 · Excel Avançado</button>
-    <button class="tab-btn" onclick="show('bi',this)">Módulo 2 · Power BI</button>
-  </div>
-
   <!-- ═══ MÓDULO EXCEL ═══ -->
-  <div id="excel" class="module active">
+  <div id="excel" class="module active" style="border-radius: var(--radius)">
 
     <div class="section">
       <div class="section-head">
@@ -315,7 +310,7 @@
         <div class="kpi"><div class="kpi-val">5.000</div><div class="kpi-lbl">linhas na aba Entregas</div></div>
         <div class="kpi"><div class="kpi-val">4</div><div class="kpi-lbl">abas no arquivo</div></div>
         <div class="kpi"><div class="kpi-val">Excel</div><div class="kpi-lbl">2019+ ou Microsoft 365</div></div>
-        <div class="kpi"><div class="kpi-val">75 min</div><div class="kpi-lbl">tempo sugerido</div></div>
+        <div class="kpi"><div class="kpi-val">3h</div><div class="kpi-lbl">tempo total</div></div>
       </div>
     </div>
 
@@ -493,159 +488,97 @@ Explique qualquer premissa ou dificuldade encontrada:
         </div>
       </div>
 
-    </div>
-  </div>
 
-  <!-- ═══ MÓDULO POWER BI ═══ -->
-  <div id="bi" class="module">
-
-    <div class="section">
-      <div class="section-head">
-        <span class="section-title">Contexto</span>
-        <span class="section-meta"><span class="dot-green"></span> 75 minutos · 50 pontos</span>
-      </div>
-      <div class="scenario">
-        <strong>Cenário:</strong> Você recebeu um arquivo <code>.pbix</code> (Power BI Desktop) com as mesmas 4 tabelas do arquivo Excel já carregadas como fonte de dados. O modelo está parcialmente configurado — há relacionamentos a revisar, dados a limpar via Power Query e medidas DAX a construir. Seu objetivo é entregar um dashboard executivo para o gerente de operações da Imile Delivery que seja claro, funcional e atualizado automaticamente.
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="section-head"><span class="section-title">Questões</span></div>
-
-      <!-- BI Q1 -->
+      <!-- Excel Q6 -->
       <div class="q">
         <div class="q-header">
-          <div class="q-num">1</div>
-          <div class="q-title">Power Query — Limpeza e transformação de dados</div>
-          <div class="q-pts">10 pts</div>
+          <div class="q-num">6</div>
+          <div class="q-title">Consultas com PROCV, PROCH e PROCX — comparativo prático</div>
+          <div class="q-pts">25 pts</div>
         </div>
         <div class="q-body">
-          <p>Antes de construir o modelo, realize as seguintes transformações no Power Query (Editor de Consultas):</p>
+          <p>Usando o arquivo <strong>Imile Delivery_Operacoes.xlsx</strong>, resolva as três tarefas abaixo e, em cada uma, indique qual função utilizou e por quê:</p>
           <ul>
-            <li><strong>Entregas:</strong> garanta que <code>data_coleta</code>, <code>data_prevista</code> e <code>data_entrega</code> estejam no tipo <em>Data</em>; crie uma coluna calculada <code>Dias_Atraso</code> = <code>data_entrega - data_prevista</code> (resultado em dias inteiros, nulo quando não entregue).</li>
-            <li><strong>Clientes:</strong> padronize a coluna <code>regiao</code> removendo espaços extras e colocando em Title Case.</li>
-            <li><strong>Parametros:</strong> faça o unpivot da tabela de SLA para que cada linha contenha <em>Segmento</em> e <em>SLA_Dias</em> — facilitando o relacionamento com a tabela Entregas.</li>
-            <li><strong>Crie uma tabela de calendário</strong> no Power Query (ou em DAX com <code>CALENDAR()</code>) abrangendo todo o período dos dados, com colunas de Ano, Trimestre, Mês, Semana e Dia da Semana.</li>
+            <li><strong>Q6a — PROCV:</strong> Na aba <em>Entregas</em>, crie a coluna <code>Nome_Cliente</code> que busca o <code>nome_cliente</code> correspondente ao <code>cliente_id</code> na aba <em>Clientes</em>. Use <code>PROCV</code> com correspondência exata.</li>
+            <li><strong>Q6b — PROCH:</strong> Em uma nova aba chamada <em>Resumo_H</em>, monte uma tabela com os CDs nas linhas e os segmentos (<em>B2B, B2C, E-commerce, Farmácias</em>) nas colunas. Preencha cada célula com o total de entregas daquele CD × segmento usando <code>SOMASES</code>. Em seguida, use <code>PROCH</code> para buscar o total de um segmento específico a partir de uma célula de referência com o nome do segmento.</li>
+            <li><strong>Q6c — PROCX:</strong> Refaça a busca de Q6a usando <code>PROCX</code>, retornando <code>"Cliente não encontrado"</code> quando o <code>cliente_id</code> não existir na tabela <em>Clientes</em>. Em seguida, explique as diferenças práticas entre <code>PROCV</code>, <code>PROCH</code> e <code>PROCX</code>: limitações, flexibilidade e quando usar cada um.</li>
           </ul>
           <div class="answer-area">
-            <div class="answer-label">Descreva cada transformação e as etapas no Power Query</div>
-            <textarea class="answer-input" id="bi_q1" placeholder="Descreva:
-- Como tratou os tipos de data em Entregas (via &quot;Detectar Tipo&quot; ou manual?)
-- Lógica da coluna Dias_Atraso no Power Query (Table.AddColumn, Duration.Days)
-- Transformação de regiao em Clientes (Text.Trim + Text.Proper)
-- Passo a passo do Unpivot em Parametros
-- Como criou a tabela de calendário (Power Query vs DAX CALENDAR()) e por quê
-- Colunas adicionadas ao calendário e como as calculou
+            <div class="answer-label">Cole as fórmulas de Q6a, Q6b e Q6c e explique as diferenças</div>
+            <textarea class="answer-input" id="excel_q6" placeholder="Q6a — PROCV para buscar Nome_Cliente:
+=PROCV([@cliente_id], Clientes!$A:$B, 2, 0)
+
+Q6b — PROCH para buscar total de um segmento:
+=PROCH(&quot;B2B&quot;, Resumo_H!$B$1:$E$10, CORRESP([@CD], Resumo_H!$A$2:$A$10, 0)+1, 0)
+
+Q6c — PROCX com tratamento de erro:
+=PROCX([@cliente_id], Clientes[cliente_id], Clientes[nome_cliente], &quot;Cliente não encontrado&quot;)
+
+Diferenças entre PROCV, PROCH e PROCX:
+- PROCV: busca vertical, coluna de busca deve ser a primeira, retorna pelo número da coluna...
+- PROCH: busca horizontal, linha de busca deve ser a primeira, retorna pelo número da linha...
+- PROCX: busca em qualquer direção, retorna intervalo inteiro, suporte a valor padrão e modo de correspondência...
 "></textarea>
           </div>
         </div>
       </div>
 
-      <!-- BI Q2 -->
+      <!-- Excel Q7 -->
       <div class="q">
         <div class="q-header">
-          <div class="q-num">2</div>
-          <div class="q-title">Modelagem de dados — star schema e relacionamentos</div>
-          <div class="q-pts">10 pts</div>
+          <div class="q-num">7</div>
+          <div class="q-title">Análise estatística com CONT, SOMA e variantes condicionais</div>
+          <div class="q-pts">25 pts</div>
         </div>
         <div class="q-body">
-          <p>Configure o modelo de dados em star schema no Power BI:</p>
+          <p>Em uma nova aba chamada <em>Estatisticas</em>, construa as fórmulas abaixo usando exclusivamente funções das famílias <code>CONT</code> e <code>SOMA</code> (e suas variantes condicionais). <strong>Não use Tabela Dinâmica</strong> nesta questão.</p>
           <ul>
-            <li>Defina <strong>Entregas</strong> como tabela fato e <strong>Clientes, Motoristas, Parametros e Calendário</strong> como dimensões</li>
-            <li>Confirme cardinalidade e <strong>direção de filtro</strong> de cada relacionamento; justifique onde usou bidirecional</li>
-            <li>Garanta que a tabela Calendário esteja marcada como <em>Tabela de Datas</em> nas configurações do Power BI</li>
-            <li>Crie uma coluna calculada em <strong>DAX</strong> na tabela Entregas: <code>Classe_SLA</code> (mesma lógica do Excel — No prazo / Atraso leve / Atraso crítico / Não entregue), usando <code>RELATED()</code> para buscar o SLA da tabela Parametros</li>
+            <li><strong>Q7a — Contagens:</strong>
+              <ul>
+                <li>Total de entregas por CD (use <code>CONT.SE</code> para cada CD)</li>
+                <li>Quantidade de entregas com <code>Classe_SLA = "Atraso crítico"</code> por segmento de cliente (use <code>CONT.SES</code>)</li>
+                <li>Número de motoristas distintos que realizaram pelo menos uma entrega no período — sem usar Tabela Dinâmica (<em>dica: combine <code>SOMARPRODUTO</code> com <code>1/CONT.SE</code></em>)</li>
+              </ul>
+            </li>
+            <li><strong>Q7b — Somas condicionais:</strong>
+              <ul>
+                <li>Custo total de ocorrências por CD (use <code>SOMASE</code>)</li>
+                <li>Custo total somente das entregas com <code>Classe_SLA = "Atraso crítico"</code> E <code>tipo_veiculo = "Van"</code> (use <code>SOMASES</code>)</li>
+                <li>Percentual do custo de atraso crítico sobre o custo total — construído com uma única fórmula aninhada</li>
+              </ul>
+            </li>
+            <li><strong>Q7c — Médias e extremos:</strong>
+              <ul>
+                <li>Média de <code>km_percorrido</code> por tipo de veículo (use <code>MÉDIASE</code>)</li>
+                <li>Maior e menor <code>custo_ocorrencia</code> entre entregas com atraso crítico (use <code>MÁXIMOSES</code> e <code>MÍNIMOSES</code>)</li>
+              </ul>
+            </li>
           </ul>
           <div class="answer-area">
-            <div class="answer-label">Descreva o modelo e as decisões de relacionamento</div>
-            <textarea class="answer-input" id="bi_q2" placeholder="Descreva:
-- Diagrama do modelo (quais tabelas, quais chaves, cardinalidade de cada relacionamento)
-- Direção de filtro de cada relacionamento e justificativa
-- Por que (ou por que não) usou filtro bidirecional em algum relacionamento
-- Coluna calculada Classe_SLA em DAX (cole a fórmula completa)
-- Como marcou a tabela Calendário como Tabela de Datas
-"></textarea>
-          </div>
-        </div>
-      </div>
+            <div class="answer-label">Cole as fórmulas de Q7a, Q7b e Q7c</div>
+            <textarea class="answer-input" id="excel_q7" placeholder="Q7a — Contagens:
+Total entregas SP-Centro:
+=CONT.SE(Entregas[CD], &quot;SP-Centro&quot;)
 
-      <!-- BI Q3 -->
-      <div class="q">
-        <div class="q-header">
-          <div class="q-num">3</div>
-          <div class="q-title">Medidas DAX avançadas</div>
-          <div class="q-pts">15 pts</div>
-        </div>
-        <div class="q-body">
-          <p>Crie as seguintes medidas DAX em uma tabela de medidas dedicada (sem misturar com as tabelas de dados):</p>
-          <ul>
-            <li><strong>[Total Entregas]</strong> = contagem de linhas da tabela Entregas</li>
-            <li><strong>[Entregas no Prazo]</strong> = entregas onde <code>Classe_SLA = "No prazo"</code></li>
-            <li><strong>[Taxa Pontualidade %]</strong> = <code>DIVIDE([Entregas no Prazo], [Total Entregas])</code></li>
-            <li><strong>[Atraso Médio (dias)]</strong> = média de <code>Dias_Atraso</code> somente para entregas atrasadas (atraso > 0)</li>
-            <li><strong>[Custo Médio por Entrega]</strong> = custo total de ocorrências ÷ total de entregas (use <code>SUMX</code> ou coluna calculada)</li>
-            <li><strong>[Taxa Pontualidade MoM]</strong> = variação percentual da taxa de pontualidade vs. mês anterior (use <code>DATEADD</code> ou <code>PREVIOUSMONTH</code>)</li>
-            <li><strong>[Meta Atingida]</strong> = retorna <code>"✅ Acima da meta"</code> se <code>[Taxa Pontualidade %] >= 0.95</code>, senão <code>"⚠️ Abaixo da meta"</code></li>
-          </ul>
-          <p><strong>Requisitos de qualidade:</strong> use variáveis (<code>VAR … RETURN</code>) em medidas com mais de uma etapa, evite hardcode de valores e garanta que todas funcionem com qualquer filtro de contexto.</p>
-          <div class="answer-area">
-            <div class="answer-label">Cole todas as medidas DAX aqui</div>
-            <textarea class="answer-input" id="bi_q3" placeholder="// [Total Entregas]
-Total Entregas = COUNTROWS(Entregas)
+Atrasos críticos por segmento (ex: B2B):
+=CONT.SES(Entregas[Classe_SLA], &quot;Atraso crítico&quot;, Entregas[segmento], &quot;B2B&quot;)
 
-// [Entregas no Prazo]
-Entregas no Prazo =
-CALCULATE(
-    COUNTROWS(Entregas),
-    Entregas[Classe_SLA] = &quot;No prazo&quot;
-)
+Motoristas distintos:
+=SOMARPRODUTO(1/CONT.SE(Entregas[motorista_id], Entregas[motorista_id]))
 
-// [Taxa Pontualidade %]
-Taxa Pontualidade % =
-DIVIDE([Entregas no Prazo], [Total Entregas], 0)
+Q7b — Somas condicionais:
+Custo total SP-Centro:
+=SOMASE(Entregas[CD], &quot;SP-Centro&quot;, Entregas[custo_ocorrencia])
 
-// [Atraso Médio (dias)]
-Atraso Médio (dias) =
-CALCULATE(
-    AVERAGEX(Entregas, Entregas[Dias_Atraso]),
-    Entregas[Dias_Atraso] > 0
-)
+Custo atraso crítico + Van:
+=SOMASES(Entregas[custo_ocorrencia], Entregas[Classe_SLA], &quot;Atraso crítico&quot;, Entregas[tipo_veiculo], &quot;Van&quot;)
 
-// Cole as demais medidas abaixo:
-"></textarea>
-          </div>
-        </div>
-      </div>
+Q7c — Médias e extremos:
+Média km Moto:
+=MÉDIASE(Entregas[tipo_veiculo], &quot;Moto&quot;, Entregas[km_percorrido])
 
-      <!-- BI Q4 -->
-      <div class="q">
-        <div class="q-header">
-          <div class="q-num">4</div>
-          <div class="q-title">Dashboard executivo em página única</div>
-          <div class="q-pts">15 pts</div>
-        </div>
-        <div class="q-body">
-          <p>Monte um dashboard executivo em <strong>uma única página</strong> do Power BI com os seguintes elementos obrigatórios:</p>
-          <ul>
-            <li><strong>4 KPI Cards no topo:</strong> [Total Entregas], [Taxa Pontualidade %], [Custo Médio por Entrega] e [Taxa Pontualidade MoM] — com indicador de variação colorido (verde/vermelho)</li>
-            <li><strong>Gráfico de barras clusterizado:</strong> total de entregas por CD e por <code>Classe_SLA</code>, com rótulos de dados visíveis</li>
-            <li><strong>Gráfico de linha com área:</strong> evolução mensal da taxa de pontualidade com linha de referência constante em 95% e tooltips personalizados mostrando [Meta Atingida]</li>
-            <li><strong>Mapa preenchido (ou treemap)</strong> por UF de destino colorido por taxa de pontualidade (gradiente vermelho → verde)</li>
-            <li><strong>Tabela top-10 motoristas</strong> por total de atrasos críticos com barra de dados (data bars) na coluna de atrasos</li>
-            <li><strong>Slicers:</strong> período (hierarquia Ano → Mês), CD e segmento de cliente — com interação cruzada habilitada em todos os visuais</li>
-          </ul>
-          <p>Use <strong>formatação condicional</strong> nas tabelas e cartões onde aplicável. O layout deve ser limpo e de fácil leitura para um gerente não-técnico.</p>
-          <div class="answer-area">
-            <div class="answer-label">Descreva o layout do dashboard e decisões de design</div>
-            <textarea class="answer-input" id="bi_q4" placeholder="Descreva:
-- Layout geral da página (grid, posição de cada visual)
-- Como implementou a linha de referência de 95% no gráfico de linha
-- Configuração do mapa preenchido (escala de cores, campo de saturação)
-- Como criou os tooltips personalizados com [Meta Atingida]
-- Formatação condicional aplicada (onde e qual regra)
-- Como configurou as interações entre slicers e visuais
-- Decisões de paleta de cores, tipografia e hierarquia visual
-- Qualquer decisão de design que julgue relevante mencionar
+Maior custo em atraso crítico:
+=MÁXIMOSES(Entregas[custo_ocorrencia], Entregas[Classe_SLA], &quot;Atraso crítico&quot;)
 "></textarea>
           </div>
         </div>
@@ -653,8 +586,6 @@ CALCULATE(
 
     </div>
   </div>
-
-
 
   <div class="footer">
     Imile Delivery · Dados fictícios criados exclusivamente para fins de avaliação · Todos os direitos reservados
@@ -666,7 +597,7 @@ CALCULATE(
 <div class="submit-bar">
   <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
     <div class="progress">
-      Preenchido: <strong id="filled-count">0</strong> / 9 campos
+      Preenchido: <strong id="filled-count">0</strong> / 7 campos
     </div>
     <div class="timer" id="timer">
       <span class="timer-icon">⏱</span>
@@ -703,7 +634,7 @@ function show(id, btn) {
   btn.classList.add('active');
 }
 
-const allFields = ['excel_q1','excel_q2','excel_q3','excel_q4','excel_q5','bi_q1','bi_q2','bi_q3','bi_q4'];
+const allFields = ['excel_q1','excel_q2','excel_q3','excel_q4','excel_q5','excel_q6','excel_q7'];
 
 function updateProgress() {
   const filled = allFields.filter(id => {
@@ -731,23 +662,19 @@ function countWords(value) {
 function buildQuestionMeta() {
   return {
     excel_q1: { label:'Excel Q1 – Classificação SLA', pts:10,
-      checks:['xlookup','índice','corresp','se(','sla','atraso','prazo','segmento','classe'] },
+      checks:['xlookup','procx','índice','corresp','se(','sla','atraso','prazo','segmento','classe'] },
     excel_q2: { label:'Excel Q2 – Tabela Dinâmica com Slicers', pts:10,
       checks:['tabela dinâmica','slicer','segmentador','região','mês','campo calculado','conexões de relatório','agrupamento'] },
     excel_q3: { label:'Excel Q3 – Custo operacional por CD', pts:10,
-      checks:['xlookup','somase','classificar','únicos','custo','km','hstack','motorista'] },
+      checks:['xlookup','procx','somase','classificar','únicos','custo','km','hstack','motorista'] },
     excel_q4: { label:'Excel Q4 – Matrizes dinâmicas (FILTRO/CLASSIFICAR)', pts:10,
       checks:['filtro(','classificar(','únicos(','cont.ses','somase','hstack','atraso crítico','segmento'] },
     excel_q5: { label:'Excel Q5 – Mini-dashboard visual', pts:10,
       checks:['kpi','slicer','segmentador','gráfico','linha','meta','95%','formatação condicional','td'] },
-    bi_q1:   { label:'BI Q1 – Power Query (limpeza e calendário)', pts:10,
-      checks:['power query','duration.days','text.trim','text.proper','unpivot','calendar','calendário','data type','tipo'] },
-    bi_q2:   { label:'BI Q2 – Modelagem star schema', pts:10,
-      checks:['star schema','relacionamento','cardinalidade','direção','filtro','related(','tabela de datas','bidirecional'] },
-    bi_q3:   { label:'BI Q3 – Medidas DAX avançadas', pts:15,
-      checks:['divide(','calculate(','countrows','dateadd','averagex','var ','return','previousmonth','sumx'] },
-    bi_q4:   { label:'BI Q4 – Dashboard executivo Power BI', pts:15,
-      checks:['kpi','linha de referência','mapa','formatação condicional','tooltip','slicer','interação','95%','gradient'] },
+    excel_q6: { label:'Excel Q6 – PROCV / PROCH / PROCX', pts:25,
+      checks:['procv','proch','procx','corresp','índice','cliente_id','nome_cliente','não encontrado','correspondência exata','flexibilidade','direção','primeira coluna','primeira linha','valor padrão'] },
+    excel_q7: { label:'Excel Q7 – CONT, SOMA e variantes', pts:25,
+      checks:['cont.se','cont.ses','somase','somases','médiase','somarproduto','máximoses','mínimoses','1/cont.se','distintos','atraso crítico','van','custo','percentual','média'] },
   };
 }
 
