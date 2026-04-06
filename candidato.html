@@ -659,9 +659,12 @@ CALCULATE(
   <div class="progress">
     Preenchido: <strong id="filled-count">0</strong> / 9 campos
   </div>
-  <button class="btn-submit" id="btn-submit" onclick="submitForm()">
-    📨 Enviar Respostas
-  </button>
+  <div class="submit-actions">
+    <button class="btn-secondary" id="btn-preview" onclick="previewResult()" style="display:none">👁 Ver Resultado</button>
+    <button class="btn-submit" id="btn-submit" onclick="submitForm()">
+      📨 Enviar Respostas
+    </button>
+  </div>
 </div>
 
 <!-- Toast -->
@@ -854,6 +857,14 @@ async function submitForm() {
     respostas: answers
   };
 
+  // Salva localmente sempre (independente do Apps Script)
+  try {
+    const key = `teste_imile_${payload.attempt_id}`;
+    localStorage.setItem(key, JSON.stringify(payload));
+    const all = JSON.parse(localStorage.getItem('teste_imile_attempts') || '[]');
+    if (!all.includes(payload.attempt_id)) { all.push(payload.attempt_id); localStorage.setItem('teste_imile_attempts', JSON.stringify(all)); }
+  } catch(_) {}
+
   try {
     await callAppsScript(payload);
     showToast('✅ Respostas salvas com sucesso!', 'success');
@@ -861,10 +872,25 @@ async function submitForm() {
     btn.style.background = 'var(--teal)';
   } catch(err) {
     console.error(err);
-    showToast(`❌ ${err.message}`, 'error');
-    btn.disabled = false;
-    btn.textContent = '📨 Enviar Respostas';
+    // Fallback: Apps Script falhou, mas dados estão no localStorage — oferece download
+    showToast('⚠️ Salvo localmente. Baixe o arquivo de backup.', 'error');
+    btn.textContent = '✅ Respostas salvas (offline)';
+    btn.style.background = 'var(--amber)';
+    btn.disabled = true;
+    // Exibe botão de download do JSON
+    const dl = document.createElement('a');
+    dl.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(payload, null, 2));
+    dl.download = `respostas_${payload.candidato.nome.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.json`;
+    dl.className = 'btn-secondary';
+    dl.style.cssText = 'display:inline-flex;align-items:center;gap:6px;text-decoration:none;margin-top:8px;';
+    dl.innerHTML = '⬇️ Baixar respostas (JSON)';
+    document.querySelector('.submit-actions').appendChild(dl);
   }
+}
+
+function previewResult() {
+  renderCandidateResult(evaluateAnswers());
+  document.getElementById('result-card').scrollIntoView({ behavior: 'smooth' });
 }
 
 document.getElementById('cand-inicio').value = new Date().toISOString().slice(0,16);
@@ -872,7 +898,10 @@ allFields.forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('blur', () => {
     const answered = allFields.some(fid => (document.getElementById(fid)?.value || '').trim());
-    if (answered) renderCandidateResult(evaluateAnswers());
+    if (answered) {
+      renderCandidateResult(evaluateAnswers());
+      document.getElementById('btn-preview').style.display = '';
+    }
   });
 });
 updateProgress();

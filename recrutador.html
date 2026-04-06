@@ -46,7 +46,13 @@
       <div class="title">Painel do recrutador</div>
       <div class="subtitle">Veja respostas, compare com o gabarito e ajuste a correção manualmente. Dados da Imile Delivery carregados do Google Sheets via Apps Script.</div>
     </div>
-    <button class="btn secondary" onclick="loadCandidates()">Atualizar</button>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button class="btn secondary" onclick="loadCandidates()">Atualizar</button>
+      <label class="btn secondary" style="cursor:pointer;" title="Importar arquivo JSON exportado pelo candidato">
+        📂 Importar JSON
+        <input type="file" accept=".json" multiple style="display:none" onchange="importJson(event)">
+      </label>
+    </div>
   </div>
 
   <div class="grid">
@@ -80,19 +86,89 @@ async function api(params, method='GET'){
   return data;
 }
 
+// ── Converte payload bruto (JSON do candidato) → formato de lista ──
+function payloadToCandidate(p) {
+  const totalAuto = p.resultado?.pontuacao_total ?? 0;
+  return {
+    attempt_id:      p.attempt_id,
+    nome:            p.candidato?.nome || '',
+    email:           p.candidato?.email || '',
+    linkedin:        p.candidato?.linkedin || '',
+    submitted_at:    p.submitted_at_iso || '',
+    auto_score:      totalAuto,
+    final_score:     totalAuto,
+    faixa_auto:      p.resultado?.faixa || '',
+    faixa_final:     p.resultado?.faixa || '',
+    reviewed_count:  0,
+    questions_count: (p.respostas || []).length,
+    _raw:            p,
+  };
+}
+
+function loadFromLocalStorage() {
+  try {
+    const ids = JSON.parse(localStorage.getItem('teste_imile_attempts') || '[]');
+    return ids.map(id => {
+      const raw = JSON.parse(localStorage.getItem(`teste_imile_${id}`) || 'null');
+      return raw ? payloadToCandidate(raw) : null;
+    }).filter(Boolean);
+  } catch(_) { return []; }
+}
+
+// Importar arquivos JSON exportados pelo candidato (fallback offline)
+function importJson(e) {
+  const files = Array.from(e.target.files);
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const p = JSON.parse(ev.target.result);
+        const c = payloadToCandidate(p);
+        // Merge sem duplicar
+        if (!candidates.find(x => x.attempt_id === c.attempt_id)) {
+          candidates.push(c);
+          // Persiste no localStorage para próximas visitas
+          try {
+            localStorage.setItem(`teste_imile_${p.attempt_id}`, JSON.stringify(p));
+            const all = JSON.parse(localStorage.getItem('teste_imile_attempts') || '[]');
+            if (!all.includes(p.attempt_id)) { all.push(p.attempt_id); localStorage.setItem('teste_imile_attempts', JSON.stringify(all)); }
+          } catch(_) {}
+        }
+        renderCandidateList();
+      } catch(_) { alert(`Erro ao ler ${file.name}. Verifique se é um JSON válido exportado pelo candidato.`); }
+    };
+    reader.readAsText(file);
+  });
+  e.target.value = '';
+}
+
 async function loadCandidates(){
   const list = document.getElementById('candidateList');
   list.innerHTML = '<div class="muted">Carregando...</div>';
+
+  // Carrega do localStorage primeiro (respostas offline)
+  const local = loadFromLocalStorage();
+
   try{
     const data = await api({action:'listCandidates'});
-    candidates = data.candidates || [];
+    const remote = data.candidates || [];
+    // Merge: remote prevalece; local preenche o que não veio do servidor
+    const remoteIds = new Set(remote.map(c => c.attempt_id));
+    candidates = [...remote, ...local.filter(c => !remoteIds.has(c.attempt_id))];
     renderCandidateList();
     if (currentAttempt) {
       const found = candidates.find(c => c.attempt_id === currentAttempt);
       if (found) loadCandidate(found.attempt_id);
     }
   }catch(e){
-    list.innerHTML = `<div class="muted">${e.message}</div>`;
+    // Apps Script indisponível — usa só o localStorage
+    candidates = local;
+    renderCandidateList();
+    list.insertAdjacentHTML('afterbegin',
+      `<div class="muted" style="font-size:12px;padding:8px;background:#fff4df;border-radius:8px;margin-bottom:8px;">
+        ⚠️ Apps Script indisponível. Exibindo respostas salvas localmente.<br>
+        Use "Importar JSON" para adicionar arquivos recebidos por e-mail.
+      </div>`);
   }
 }
 
@@ -147,15 +223,53 @@ function escapeHtml(str){
   return str.replace(/[&<>"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]));
 }
 
+// Converte payload raw (localStorage/JSON) para o formato esperado por renderDetail
+function rawToDetail(c) {
+  const p = c._raw;
+  if (!p) return null;
+  const candidate = {
+    attempt_id:     p.attempt_id,
+    nome:           p.candidato?.nome || '',
+    email:          p.candidato?.email || '',
+    linkedin:       p.candidato?.linkedin || '',
+    auto_score:     p.resultado?.pontuacao_total ?? 0,
+    final_score:    p.resultado?.pontuacao_total ?? 0,
+    reviewed_count: 0,
+    questions_count:(p.respostas || []).length,
+    faixa_auto:     p.resultado?.faixa || '',
+    faixa_final:    p.resultado?.faixa || '',
+  };
+  const questions = (p.respostas || []).map(r => ({
+    question_id:       r.id,
+    pergunta:          r.pergunta,
+    max_pontos:        r.max_pontos,
+    auto_score:        r.pontuacao_estimada ?? 0,
+    review_score:      null,
+    review_status:     null,
+    review_note:       '',
+    resposta:          r.resposta,
+    gabarito:          r.gabarito || '',
+  }));
+  return { candidate, questions };
+}
+
 async function loadCandidate(attemptId){
   currentAttempt = attemptId;
   renderCandidateList();
   document.getElementById('mainContent').innerHTML = '<div class="empty">Carregando respostas...</div>';
+
+  // Tenta Apps Script; se falhar, usa dados locais
   try{
     const data = await api({action:'getCandidate', attempt_id:attemptId});
     renderDetail(data);
   }catch(e){
-    document.getElementById('mainContent').innerHTML = `<div class="empty">${e.message}</div>`;
+    const cLocal = candidates.find(c => c.attempt_id === attemptId);
+    const detail = cLocal ? rawToDetail(cLocal) : null;
+    if (detail) {
+      renderDetail(detail);
+    } else {
+      document.getElementById('mainContent').innerHTML = `<div class="empty">${e.message}</div>`;
+    }
   }
 }
 
