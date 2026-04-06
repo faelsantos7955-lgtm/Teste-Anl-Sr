@@ -841,12 +841,9 @@ const TIMER_KEY = 'teste_imile_timer_end';
 const TOTAL_SECONDS = 2 * 60 * 60; // 2h
 
 function initTimer() {
-  // Se já havia uma sessão em andamento, retoma o tempo restante
-  let endTs = Number(localStorage.getItem(TIMER_KEY) || 0);
-  if (!endTs || endTs < Date.now()) {
-    endTs = Date.now() + TOTAL_SECONDS * 1000;
-    localStorage.setItem(TIMER_KEY, endTs);
-  }
+  // Sempre começa do zero no carregamento da página
+  localStorage.removeItem(TIMER_KEY);
+  const endTs = Date.now() + TOTAL_SECONDS * 1000;
 
   const display  = document.getElementById('timer-display');
   const timerEl  = document.getElementById('timer');
@@ -942,6 +939,16 @@ async function onTimerExpired() {
     document.querySelector('.submit-actions').appendChild(dl);
   }
 }
+
+// Limpa sessão anterior a cada carregamento
+(function() {
+  try {
+    const ids = JSON.parse(localStorage.getItem('teste_imile_attempts') || '[]');
+    ids.forEach(id => localStorage.removeItem(`teste_imile_${id}`));
+    localStorage.removeItem('teste_imile_attempts');
+    localStorage.removeItem(TIMER_KEY);
+  } catch(_) {}
+})();
 
 initTimer();
 allFields.forEach(id => {
